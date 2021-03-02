@@ -1,0 +1,45 @@
+{% extends 'teacher_add.html' %}
+{% block title %}
+    <li><a href="{% url 'teacher_list' %}">教师列表</a></li>
+    <li><a href="{% url 'class_list' %}">班级列表</a></li>
+    <li class="active"><a href="{% url 'course_list' %}">课程列表</a></li>
+    <li><a href="{% url 'schedule' %}">课程表</a></li>
+{% endblock %}
+{% block class %}
+    <h2 class="sub-header">课程列表</h2>
+    <a class="btn btn-primary btn-sm" href="{% url 'course_list' %}">返回</a>
+    <form action="" method="post">
+        {% csrf_token %}
+        <span>
+                    <label>班级名称</label>
+        <select name="class">
+        {% for i in Class %}
+            <option value={{ i.id }}>{{ i.name }}</option>
+        {% endfor %}
+            </select></span>
+        <br>
+        <span><label>上课老师</label>
+            <select name="teacher">
+        {% for i in teacher %}
+            <option value={{ i.id }}>{{ i.name }}</option>
+        {% endfor %}
+    </select></span>
+        <br>
+        <span><label>上课日期</label>
+            <select name="week">
+        {% for i in weeks %}
+            <option value={{ forloop.counter }}>{{ i }}</option>
+        {% endfor %}
+            </select></span>
+        <br>
+        <span><label>上课时间</label>
+            <select name="section">
+        {% for i in sections %}
+            <option value={{ forloop.counter }}>{{ i }}</option>
+        {% endfor %}
+            </select></span>
+        <br>
+        <span>{{ errors }}</span>
+        <button class="btn btn-primary btn-sm" type="submit">提交</button>
+    </form>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'manages.html' %}
+{% block title %}
+    <li><a href="{% url 'teacher_list' %}">教师列表</a></li>
+    <li class="active"><a href="{% url 'class_list' %}">班级列表</a></li>
+    <li><a href="{% url 'course_list' %}">课程列表</a></li>
+    <li><a href="{% url 'schedule' %}">课程表</a></li>
+{% endblock %}
+{% block class %}
+    <h2 class="sub-header">班级列表</h2>
+    <a class="btn btn-primary btn-sm" href="{% url 'class_add' %}">新增</a>
+{% endblock %}
+{% block list %}
+    <thead>
+    <tr>
+        <th>序号</th>
+        <th>班级</th>
+        <th>人数</th>
+        <th>操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for i in cla %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ i.name }}</td>
+            <td>{{ i.student_quantity }}</td>
+            <td>
+                <a class="btn btn-danger btn-sm" href="/class_del/?id={{ i.id }}">删除</a>
+                <a class="btn btn-primary btn-sm" href="/class_edit/?id={{ i.id }}">编辑</a>
+            </td>
+        </tr>
+    {% endfor %}
+
+    </tbody>
+{% endblock %}

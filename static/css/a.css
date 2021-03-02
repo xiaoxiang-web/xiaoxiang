@@ -1,0 +1,5 @@
+body {
+    background-image: url(/static/imgs/bg1.jpg);// 添加图片路径
+    background-repeat: no-repeat;// 图片去重只显示一张
+    background-size: 100% auto;// 铺满整个背景
+}

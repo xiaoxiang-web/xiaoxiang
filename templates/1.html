@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  	<title>课表</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <!--<title layout:title-pattern="$DECORATOR_TITLE - $CONTENT_TITLE" th:text="#{system.title}">教务系统</title>-->
+
+    <link rel="icon" href="/eams5-student/static/favicon.png">
+    <link rel="stylesheet" href="/eams5-student/static/eams-ui/css/eams-ui.min.css?v=00010">
+    <link rel="stylesheet" href="/eams5-student/static/eams-ui/css/eams-ui-plugin.min.css?v=00010">
+    <link rel="stylesheet" href="/eams5-student/static/helper/css/info-page.css?v=00005">
+    <link rel="stylesheet" href="/eams5-student/static/helper/css/generate-template.css?v=00002">
+    <link rel="stylesheet" href="/eams5-student/static/eams-ui/css/default.css?v=00010">
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="/eams5-student/static/eams-ui/js/html5shiv.min.js?v=00002"></script>
+    <script src="/eams5-student/static/eams-ui/js/respond.min.js?v=00002"></script>
+    <![endif]-->
+
+    <script src="/eams5-student/static/eams-ui/js/eams-ui.js?v=00010"></script><style type="text/css">.dataTables_scroll{position:relative;}.JColResizer{table-layout:fixed;} .JColResizer > tbody > tr > td, .JColResizer > tbody > tr > th{overflow:hidden} .JCLRgrips{pointer-events:none;top:0; position:absolute;} .JCLRgrip{pointer-events:all;height:100%;margin-left:-5px; position:absolute; z-index:5; } .JCLRgrip .JColResizer{position:absolute;background-color:red;filter:alpha(opacity=1);opacity:0;width:10px;height:100%;cursor: col-resize;top:0px} .JCLRLastGrip{position:absolute; width:1px; } .JCLRLastGrip > .JColResizer{width: 5px!important;} .JCLRgripDrag{ border-left:1px dotted black;	} .JCLRFlex{width:auto!important;} .JCLRgrip.JCLRdisabledGrip .JColResizer{cursor:default; display:none;}</style>
+    <script src="/eams5-student/static/eams-ui/js/eams-ui.zh.min.js?v=00002"></script>
+    <script src="/eams5-student/static/eams-ui/js/iconfont.js"></script>
+    <script>
+      // 设置 context path, js会需要用
+      window.CONTEXT_PATH = '/eams5-student';
+      window.LOCALE = 'zh';
+    </script>
+    <!--<script type="text/javascript" th:src="@{/static/system/global-variable.js?v=00002}"></script>-->
+    <script type="text/javascript" src="/eams5-student/static/helper/search-page-helper1.js?v=00003"></script>
+    <script type="text/javascript" src="/eams5-student/static/helper/notIndex-page-helper.js?v=00003"></script>
+    <script type="text/javascript" src="/eams5-student/static/helper/info-page.js?v=00003"></script>
+    <script type="text/javascript" src="/eams5-student/static/helper/student-selectize.js?v=00004"></script>
+    <script type="text/javascript" src="/eams5-student/static/helper/datatable-column-tools.js?v=00004"></script>
+    <script>
+      /*<![CDATA[*/
+      $(function () {
+        var infoMessages = null;
+        if (!infoMessages) {
+          infoMessages = [];
+        }
+        $.each(infoMessages, function (index, message) {
+          new PNotify({
+            title: '消息',
+            text: message,
+            type: 'info',
+            delay: 1000
+          });
+        });
+
+        var successMessages = null;
+        if (!successMessages) {
+          successMessages = [];
+        }
+        $.each(successMessages, function (index, message) {
+          new PNotify({
+            title: '成功',
+            text: message,
+            type: 'success',
+            delay: 1000
+          });
+        });
+
+        var errorMessages = null;
+        if (!errorMessages) {
+          errorMessages = [];
+        }
+        $.each(errorMessages, function (index, message) {
+          new PNotify({
+            title: '错误',
+            text: message,
+            type: 'error',
+            delay: 5000
+          });
+        });
+
+        var noticeMessages = null;
+        if (!noticeMessages) {
+          noticeMessages = [];
+        }
+        $.each(noticeMessages, function (index, message) {
+          new PNotify({
+            title: '提示',
+            text: message,
+            type: 'notice',
+            delay: 1000
+          });
+        });
+
+        $(document).ajaxError(function (event, request) {
+
+          if (request.responseText && request.status == 200 && request.statusText == "parsererror") {
+            window.location.href = self.location.href;
+          }
+
+          if (!request.responseJSON) {
+            return;
+          }
+
+          var texts = [];
+          var message = request.responseJSON.message;
+          if (request.responseJSON.errors && request.responseJSON.errors.length > 0) {
+            message = request.responseJSON.errors[0].defaultMessage;
+          }
+
+          texts.push("exception:\t" + request.responseJSON.exception);
+          texts.push("message:\t" + message);
+          texts.push("path:\t" + request.responseJSON.path);
+          texts.push("status:\t" + request.responseJSON.status);
+          texts.push("timestamp:\t" + new Date(request.responseJSON.timestamp));
+
+          new PNotify({
+            title: request.responseJSON.error,
+            text: texts.join("\n"),
+            type: 'error',
+            delay: 50000,
+            width: '600px',
+            min_height: '150px'
+          });
+
+        });
+
+      });
+
+      window.preventFromSubmitTwice = function ($form) {
+        $form.submit(function () {
+          $(this).submit(function () {
+            return false;
+          });
+          return true;
+        });
+      };
+      window.preventFromSubmitTwice($('#save-form'));
+
+      window.semesterURIUtil = function (originalUri, insertBefore, semesterId) {
+        var semesterPattern = "/semester/";
+        if (originalUri.indexOf(semesterPattern) != -1) {
+          // remove semester pattern
+          var semesterPatternStartAt = originalUri.indexOf(semesterPattern);
+          var semesterPatternEndAt = semesterPatternStartAt +
+              originalUri.substring(semesterPatternStartAt, originalUri.length).indexOf("/", semesterPattern.length);
+          originalUri = originalUri.substring(0, semesterPatternStartAt) + originalUri.substring(semesterPatternEndAt, originalUri.length);
+        }
+        var appendIndex = originalUri.indexOf(insertBefore);
+        return originalUri.substring(0, appendIndex) + semesterPattern + semesterId + originalUri.substring(appendIndex, originalUri.length);
+      };
+      document.ondrop = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+
+      //    eamsUiUtil.cascadeScrollParentWindowToTop(window);
+      /*]]>*/
+    </script>
+    <style>
+      .selectize-dropdown {
+        width: auto !important;
+        min-width: 100%;
+      }
+
+      .selectize-dropdown-content > div.option {
+        white-space: nowrap;
+      }
+    </style>
+  	<link rel="stylesheet" href="/eams5-student/static/scheduletable/css/schedule-table.css">
+  	<script src="/eams5-student/static/eams-ui/js/require.js"></script>
+  	<script src="/eams5-student/static/scheduletable/js/main.js"></script>
+  	<style>
+    span.form-control-next {
+      display: block;
+      padding: 6px 0px;
+    }
+  </style>
+  <script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="models/lesson" src="/eams5-student/static/scheduletable/js/models/lesson.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="collections/lessons" src="/eams5-student/static/scheduletable/js/collections/lessons.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="models/card" src="/eams5-student/static/scheduletable/js/models/card.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="collections/cards" src="/eams5-student/static/scheduletable/js/collections/cards.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="models/scheduleGroup" src="/eams5-student/static/scheduletable/js/models/scheduleGroup.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="collections/scheduleGroups" src="/eams5-student/static/scheduletable/js/collections/scheduleGroups.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="models/timeTable" src="/eams5-student/static/scheduletable/js/models/timeTable.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="views/timeTableView" src="/eams5-student/static/scheduletable/js/views/timeTableView.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="collections/holidays" src="/eams5-student/static/scheduletable/js/collections/holidays.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="collections/weekdayColumns" src="/eams5-student/static/scheduletable/js/collections/weekdayColumns.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="collections/warnCards" src="/eams5-student/static/scheduletable/js/collections/warnCards.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="common" src="/eams5-student/static/scheduletable/js/common.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="collections/schedules" src="/eams5-student/static/scheduletable/js/collections/schedules.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/cardsService" src="/eams5-student/static/scheduletable/js/services/cardsService.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/scheduleGroupService" src="/eams5-student/static/scheduletable/js/services/scheduleGroupService.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="models/weekdayColumn" src="/eams5-student/static/scheduletable/js/models/weekdayColumn.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="models/holiday" src="/eams5-student/static/scheduletable/js/models/holiday.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="views/weekdayColumnListView" src="/eams5-student/static/scheduletable/js/views/weekdayColumnListView.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="text" src="/eams5-student/static/eams-ui/js/text.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="models/warnCard" src="/eams5-student/static/scheduletable/js/models/warnCard.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="models/extendCard" src="/eams5-student/static/scheduletable/js/models/extendCard.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="models/activity" src="/eams5-student/static/scheduletable/js/models/activity.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="collections/extendCards" src="/eams5-student/static/scheduletable/js/collections/extendCards.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="views/weekdayColumnView" src="/eams5-student/static/scheduletable/js/views/weekdayColumnView.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="views/cardView" src="/eams5-student/static/scheduletable/js/views/cardView.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="views/warnCardView" src="/eams5-student/static/scheduletable/js/views/warnCardView.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="views/extendCardView" src="/eams5-student/static/scheduletable/js/views/extendCardView.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="views/roomTableWarnView" src="/eams5-student/static/scheduletable/js/views/roomTableWarnView.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="repo/roomActivityTableRepo" src="/eams5-student/static/scheduletable/js/repo/roomActivityTableRepo.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="models/schedule" src="/eams5-student/static/scheduletable/js/models/schedule.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/schedulesService" src="/eams5-student/static/scheduletable/js/services/schedulesService.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="collections/activities" src="/eams5-student/static/scheduletable/js/collections/activities.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="collections/temp-cards" src="/eams5-student/static/scheduletable/js/collections/temp-cards.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="views/popoverView" src="/eams5-student/static/scheduletable/js/views/popoverView.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="views/scheduleArrangeView" src="/eams5-student/static/scheduletable/js/views/scheduleArrangeView.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/TeacherExistedActivityService" src="/eams5-student/static/scheduletable/js/services/TeacherExistedActivityService.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/AdminclassExistedActivityService" src="/eams5-student/static/scheduletable/js/services/AdminclassExistedActivityService.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/RoomExistedActivityService" src="/eams5-student/static/scheduletable/js/services/RoomExistedActivityService.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/ExistActivityService" src="/eams5-student/static/scheduletable/js/services/ExistActivityService.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="views/extendPopoverView" src="/eams5-student/static/scheduletable/js/views/extendPopoverView.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="views/warnPopoverView" src="/eams5-student/static/scheduletable/js/views/warnPopoverView.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="views/scheduleView" src="/eams5-student/static/scheduletable/js/views/scheduleView.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="models/cell" src="/eams5-student/static/scheduletable/js/models/cell.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="models/room" src="/eams5-student/static/scheduletable/js/models/room.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="collections/cells" src="/eams5-student/static/scheduletable/js/collections/cells.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="collections/rooms" src="/eams5-student/static/scheduletable/js/collections/rooms.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="views/roomView" src="/eams5-student/static/scheduletable/js/views/roomView.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="views/customTimeAndPlace" src="/eams5-student/static/scheduletable/js/views/customTimeAndPlace.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/scheduleArrangeViewService" src="/eams5-student/static/scheduletable/js/services/scheduleArrangeViewService.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/TeacherConflictService" src="/eams5-student/static/scheduletable/js/services/TeacherConflictService.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/RoomConflictService" src="/eams5-student/static/scheduletable/js/services/RoomConflictService.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/AdminclassConflictService" src="/eams5-student/static/scheduletable/js/services/AdminclassConflictService.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="repo/TeacherExistedActivityRepo" src="/eams5-student/static/scheduletable/js/repo/TeacherExistedActivityRepo.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="repo/AdminclassExistedActivityRepo" src="/eams5-student/static/scheduletable/js/repo/AdminclassExistedActivityRepo.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="repo/RoomExistedActivityRepo" src="/eams5-student/static/scheduletable/js/repo/RoomExistedActivityRepo.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/windowViewService" src="/eams5-student/static/scheduletable/js/services/windowViewService.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/TeacherArrangingActivityService" src="/eams5-student/static/scheduletable/js/services/TeacherArrangingActivityService.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/RoomArrangingActivityService" src="/eams5-student/static/scheduletable/js/services/RoomArrangingActivityService.js"></script><script type="text/javascript" charset="utf-8" async="" data-requirecontext="_" data-requiremodule="services/AdminclassArrangingActivityService" src="/eams5-student/static/scheduletable/js/services/AdminclassArrangingActivityService.js"></script></head>
+<body>
+<div id="table-content">
+    <div class="row">
+      <div class="course-table"><div class="time-table"><div class="time-table-title">
+  <div class="layout-title"></div>
+<div class="weekday-title" style="width: 13.1429%;">星期一</div><div class="weekday-title" style="width: 13.1429%;">星期二</div><div class="weekday-title" style="width: 13.1429%;">星期三</div><div class="weekday-title" style="width: 13.1429%;">星期四</div><div class="weekday-title" style="width: 13.1429%;">星期五</div><div class="weekday-title" style="width: 13.1429%;">星期六</div><div class="weekday-title" style="width: 13.1429%;">星期日</div></div>
+
+<!-- time table -->
+<div class="time-table-body">
+  <div class="columns time-segment">
+  <div style="height: 60px;"><span>8:00</span></div><div style="height: 60px;"><span>9:00</span></div><div style="height: 60px;"><span>10:00</span></div><div style="height: 60px;"><span>11:00</span></div><div style="height: 60px;"><span>12:00</span></div><div style="height: 60px;"><span>13:00</span></div><div style="height: 60px;"><span>14:00</span></div><div style="height: 60px;"><span>15:00</span></div><div style="height: 60px;"><span>16:00</span></div><div style="height: 60px;"><span>17:00</span></div><div style="height: 60px;"><span>18:00</span></div><div style="height: 60px;"><span>19:00</span></div><div style="height: 60px;"><span>20:00</span></div><div style="height: 60px;"><span>21:00</span></div></div>
+  <div class="columns unit">
+  <div style="height: 50px; line-height: 50px; background-color: rgb(255, 255, 255);"><span>1</span></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div style="height: 50px; line-height: 50px; background-color: rgb(255, 255, 255);"><span>2</span></div><div class="rest-time" style="height: 20px; line-height: 20px;"></div><div style="height: 50px; line-height: 50px; background-color: rgb(255, 255, 255);"><span>3</span></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div style="height: 50px; line-height: 50px; background-color: rgb(255, 255, 255);"><span>4</span></div><div class="rest-time" style="height: 120px; line-height: 120px;"></div><div style="height: 50px; line-height: 50px; background-color: rgb(255, 255, 255);"><span>5</span></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div style="height: 50px; line-height: 50px; background-color: rgb(255, 255, 255);"><span>6</span></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div style="height: 50px; line-height: 50px; background-color: rgb(255, 255, 255);"><span>7</span></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div style="height: 50px; line-height: 50px; background-color: rgb(255, 255, 255);"><span>8</span></div><div class="rest-time" style="height: 70px; line-height: 70px;"></div><div style="height: 50px; line-height: 50px; background-color: rgb(255, 255, 255);"><span>9</span></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div style="height: 50px; line-height: 50px; background-color: rgb(255, 255, 255);"><span>10</span></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div style="height: 50px; line-height: 50px; background-color: rgb(255, 255, 255);"><span>11</span></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div></div>
+<div class="columns weekday" style="width: 13.1429%; height: 841px;"><div class="card-view common-card un-draggable" draggable="false" style="left: 0%; width: 100%; top: 360px; height: 110px;"><div class="card-content">
+  <strong style="color: #737373">1109811B--016</strong>
+  <p>现代企业管理<br>
+    新安学堂220
+
+    &nbsp;(6~11周)
+
+    &nbsp;
+
+    1&nbsp;(5,6)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="card-view common-card un-draggable" draggable="false" style="left: 0%; width: 100%; top: 130px; height: 110px;" data-original-title="" title=""><div class="card-content">
+  <strong style="color: #737373">0529780X--003</strong>
+  <p>信息安全技术<br>
+    新安学堂227
+
+    &nbsp;(10~14周)
+
+    &nbsp;
+
+    1&nbsp;(3,4)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="blank-unit" start-time="800" end-time="850" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="900" end-time="950" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 20px; line-height: 20px;"></div><div class="blank-unit" start-time="1010" end-time="1100" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1110" end-time="1200" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 120px; line-height: 120px;"></div><div class="blank-unit" start-time="1400" end-time="1450" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1500" end-time="1550" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1600" end-time="1650" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1700" end-time="1750" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 70px; line-height: 70px;"></div><div class="blank-unit" start-time="1900" end-time="1950" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="2000" end-time="2050" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="2100" end-time="2150" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div></div><div class="columns weekday" style="width: 13.1429%; height: 841px;"><div class="card-view common-card un-draggable" draggable="false" style="left: 0%; width: 100%; top: 480px; height: 110px;"><div class="card-content">
+  <strong style="color: #737373">0529700X--002</strong>
+  <p>软件测试<br>
+    新安学堂403
+
+    &nbsp;(4~9周)
+
+    &nbsp;
+
+    2&nbsp;(7,8)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="card-view common-card un-draggable" draggable="false" style="left: 50%; width: 50%; top: 360px; height: 110px;"><div class="card-content">
+  <strong style="color: #737373">0521550X--003</strong>
+  <p>数据挖掘 (数据与智能工程)<br>
+    新安学堂326
+
+    &nbsp;(1~5周)
+
+    &nbsp;
+
+    2&nbsp;(5,6)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="card-view common-card un-draggable" draggable="false" style="left: 0%; width: 50%; top: 360px; height: 110px;"><div class="card-content">
+  <strong style="color: #737373">0521400X--002</strong>
+  <p>计算机图形学(方向3)<br>
+    新安学堂326
+
+    &nbsp;(6~11周)
+
+    &nbsp;
+
+    2&nbsp;(5,6)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="card-view common-card un-draggable" draggable="false" style="left: 0%; width: 100%; top: 130px; height: 110px;" data-original-title="" title=""><div class="card-content">
+  <strong style="color: #737373">0529770X--002</strong>
+  <p>网络程序设计<br>
+    新安学堂325
+
+    &nbsp;(5~10周)
+
+    &nbsp;
+
+    2&nbsp;(3,4)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="blank-unit" start-time="800" end-time="850" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="900" end-time="950" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 20px; line-height: 20px;"></div><div class="blank-unit" start-time="1010" end-time="1100" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1110" end-time="1200" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 120px; line-height: 120px;"></div><div class="blank-unit" start-time="1400" end-time="1450" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1500" end-time="1550" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1600" end-time="1650" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1700" end-time="1750" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 70px; line-height: 70px;"></div><div class="blank-unit" start-time="1900" end-time="1950" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="2000" end-time="2050" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="2100" end-time="2150" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div></div><div class="columns weekday" style="width: 13.1429%; height: 841px;"><div class="card-view common-card un-draggable" draggable="false" style="left: 0%; width: 100%; top: 480px; height: 110px;"><div class="card-content">
+  <strong style="color: #737373">0529700X--002</strong>
+  <p>软件测试<br>
+    新安学堂403
+
+    &nbsp;(3周)
+
+    &nbsp;
+
+    3&nbsp;(7,8)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="card-view common-card un-draggable" draggable="false" style="left: 0%; width: 100%; top: 130px; height: 110px;" data-original-title="" title=""><div class="card-content">
+  <strong style="color: #737373">0529780X--003</strong>
+  <p>信息安全技术<br>
+    新安学堂325
+
+    &nbsp;(9~14周)
+
+    &nbsp;
+
+    3&nbsp;(3,4)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="card-view common-card un-draggable" draggable="false" style="left: 0%; width: 100%; top: 0px; height: 110px;"><div class="card-content">
+  <strong style="color: #737373">1109811B--016</strong>
+  <p>现代企业管理<br>
+    新安学堂220
+
+    &nbsp;(6~11周)
+
+    &nbsp;
+
+    3&nbsp;(1,2)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="blank-unit" start-time="800" end-time="850" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="900" end-time="950" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 20px; line-height: 20px;"></div><div class="blank-unit" start-time="1010" end-time="1100" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1110" end-time="1200" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 120px; line-height: 120px;"></div><div class="blank-unit" start-time="1400" end-time="1450" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1500" end-time="1550" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1600" end-time="1650" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1700" end-time="1750" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 70px; line-height: 70px;"></div><div class="blank-unit" start-time="1900" end-time="1950" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="2000" end-time="2050" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="2100" end-time="2150" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div></div><div class="columns weekday" style="width: 13.1429%; height: 841px;"><div class="card-view common-card un-draggable" draggable="false" style="left: 0%; width: 100%; top: 480px; height: 110px;"><div class="card-content">
+  <strong style="color: #737373">0529780X--003</strong>
+  <p>信息安全技术<br>
+    新安学堂227
+
+    &nbsp;(10~14周)
+
+    &nbsp;
+
+    4&nbsp;(7,8)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="card-view common-card un-draggable" draggable="false" style="left: 0%; width: 100%; top: 360px; height: 110px;"><div class="card-content">
+  <strong style="color: #737373">0529700X--002</strong>
+  <p>软件测试<br>
+    新安学堂403
+
+    &nbsp;(3~9周)
+
+    &nbsp;
+
+    4&nbsp;(5,6)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="card-view common-card un-draggable" draggable="false" style="left: 50%; width: 50%; top: 130px; height: 110px;"><div class="card-content">
+  <strong style="color: #737373">0521550X--003</strong>
+  <p>数据挖掘 (数据与智能工程)<br>
+    新安学堂326
+
+    &nbsp;(1~5周)
+
+    &nbsp;
+
+    4&nbsp;(3,4)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="card-view common-card un-draggable" draggable="false" style="left: 0%; width: 50%; top: 130px; height: 110px;"><div class="card-content">
+  <strong style="color: #737373">0521400X--002</strong>
+  <p>计算机图形学(方向3)<br>
+    新安学堂326
+
+    &nbsp;(6~11周)
+
+    &nbsp;
+
+    4&nbsp;(3,4)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="card-view common-card un-draggable" draggable="false" style="left: 0%; width: 100%; top: 0px; height: 110px;"><div class="card-content">
+  <strong style="color: #737373">0529770X--002</strong>
+  <p>网络程序设计<br>
+    新安学堂325
+
+    &nbsp;(5~10周)
+
+    &nbsp;
+
+    4&nbsp;(1,2)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="blank-unit" start-time="800" end-time="850" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="900" end-time="950" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 20px; line-height: 20px;"></div><div class="blank-unit" start-time="1010" end-time="1100" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1110" end-time="1200" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 120px; line-height: 120px;"></div><div class="blank-unit" start-time="1400" end-time="1450" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1500" end-time="1550" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1600" end-time="1650" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1700" end-time="1750" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 70px; line-height: 70px;"></div><div class="blank-unit" start-time="1900" end-time="1950" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="2000" end-time="2050" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="2100" end-time="2150" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div></div><div class="columns weekday" style="width: 13.1429%; height: 841px;"><div class="card-view common-card un-draggable" draggable="false" style="left: 0%; width: 100%; top: 130px; height: 110px;" data-original-title="" title=""><div class="card-content">
+  <strong style="color: #737373">0529780X--003</strong>
+  <p>信息安全技术<br>
+    新安学堂325
+
+    &nbsp;(9~14周)
+
+    &nbsp;
+
+    5&nbsp;(3,4)
+
+  </p>
+</div>
+<button type="button" style="position: absolute; right: 0px; z-index: 10;" class="close hide"><span>×</span></button>
+
+<!-- 显示card详情 -->
+<div class="card-info" style="display: none; position: absolute; background: yellow; z-index: 9999; max-width: 180px;">
+  <table cellspacing="0" cellpadding="3" border="0" bgcolor="#FFFF00">
+    <tbody>
+    <tr>
+      <td width="380" color="#000000" style="padding: 5px;"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><div class="blank-unit" start-time="800" end-time="850" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="900" end-time="950" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 20px; line-height: 20px;"></div><div class="blank-unit" start-time="1010" end-time="1100" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1110" end-time="1200" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 120px; line-height: 120px;"></div><div class="blank-unit" start-time="1400" end-time="1450" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1500" end-time="1550" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1600" end-time="1650" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1700" end-time="1750" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 70px; line-height: 70px;"></div><div class="blank-unit" start-time="1900" end-time="1950" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="2000" end-time="2050" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="2100" end-time="2150" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div></div><div class="columns weekday" style="width: 13.1429%; height: 841px;"><div class="blank-unit" start-time="800" end-time="850" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="900" end-time="950" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 20px; line-height: 20px;"></div><div class="blank-unit" start-time="1010" end-time="1100" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1110" end-time="1200" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 120px; line-height: 120px;"></div><div class="blank-unit" start-time="1400" end-time="1450" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1500" end-time="1550" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1600" end-time="1650" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1700" end-time="1750" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 70px; line-height: 70px;"></div><div class="blank-unit" start-time="1900" end-time="1950" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="2000" end-time="2050" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="2100" end-time="2150" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div></div><div class="columns weekday" style="width: 13.1429%; height: 841px;"><div class="blank-unit" start-time="800" end-time="850" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="900" end-time="950" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 20px; line-height: 20px;"></div><div class="blank-unit" start-time="1010" end-time="1100" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1110" end-time="1200" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 120px; line-height: 120px;"></div><div class="blank-unit" start-time="1400" end-time="1450" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1500" end-time="1550" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1600" end-time="1650" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="1700" end-time="1750" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 70px; line-height: 70px;"></div><div class="blank-unit" start-time="1900" end-time="1950" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="2000" end-time="2050" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div><div class="blank-unit" start-time="2100" end-time="2150" draggable="false" style="height: 50px; line-height: 50px;"></div><div class="blank-unit-line" style="height: 50px; line-height: 50px;"></div><div class="rest-time" style="height: 10px; line-height: 10px;"></div></div></div></div></div>
+    </div>
+
+  </div>
+</body>
+</html>

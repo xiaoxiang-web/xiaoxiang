@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登陆界面</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/signin.css">
+    <link rel="stylesheet" href="/static/css/a.css">
+</head>
+<body>
+
+<div class="container">
+
+    <form class="form-signin" action="" method="post" novalidate>
+        {% csrf_token %}
+        <h2 class="form-signin-heading" style="color: #979a9e">用户登录</h2>
+        <label for="inputEmail" class="sr-only">Email address</label>
+        <input type="text" name='username' id="inputEmail" class="form-control" placeholder="username" required=""
+               autofocus="">
+        <label for="inputPassword" class="sr-only">Password</label>
+        <input type="password" name="passward" id="inputPassword" class="form-control" placeholder="Password"
+               required="">
+        <a href="{% url 'register' %}">注册</a>
+        <p>{{ errors }}</p>
+
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+    </form>
+
+</div> <!-- /container -->
+
+</body>
+</html>

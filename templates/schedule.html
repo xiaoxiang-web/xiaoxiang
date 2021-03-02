@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/dsb.css">
+</head>
+
+<body>
+<nav class="navbar navbar-default navbar-fixed-top" >
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+                    aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <h3>高校排课系统 <span style="color: #2fa0ec">HFUT</span></h3>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+            <a href="{% url 'logout' %}"><button type="button" class="btn btn-default navbar-btn navbar-right" href='{% url 'logout' %}'>注销</button></a>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#">{{ username }}</a></li>
+            </ul>
+
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+            <ul class="nav nav-sidebar">
+                {% block title %}
+                <li><a href="{% url 'teacher_list' %}">教师列表</a></li>
+                <li><a href="{% url 'class_list' %}">班级列表</a></li>
+                <li><a href="{% url 'course_list' %}">课程列表</a></li>
+                <li class="active"><a href="{% url 'schedule' %}">课程表</a></li>
+                {% endblock %}
+            </ul>
+
+        </div>
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            <h2 class="sub-header">{{ cla.name }}课程表</h2>
+        <form action="" method="post">
+            {% csrf_token %}
+            <select name="class">
+                {% for i in Class %}
+                <option value={{ i.id }}>{{ i.name }}</option>
+                {% endfor %}
+            </select>
+        <button class="btn btn-primary btn-sm" type="submit">查询</button>
+        </form>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover" border="1">
+                    <thead>
+                    <tr>
+                        <th width="60" nowrap>节次</th>
+                        <th width="90" nowrap>周一</th>
+                        <th width="90" nowrap>周二</th>
+                        <th width="90" nowrap>周三</th>
+                        <th width="90" nowrap>周四</th>
+                        <th width="90" nowrap>周五</th>
+                        <th style="visibility: hidden"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for i in courses %}
+                        <tr>
+                            <td>第{{ forloop.counter }}节</td>
+                            {% for j in i %}
+                                <td>{% for k in j %}
+                                    {{ k }}
+                                    <br>
+                                    {% endfor %}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+
+
+                    </tbody>
+                </table>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+
+</body>
+</html>

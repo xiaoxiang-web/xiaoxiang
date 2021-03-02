@@ -1,0 +1,41 @@
+{% extends 'manages.html' %}
+{% block title %}
+    <li><a href="{% url 'teacher_list' %}">教师列表</a></li>
+    <li><a href="{% url 'class_list' %}">班级列表</a></li>
+    <li class="active"><a href="{% url 'course_list' %}">课程列表</a></li>
+    <li><a href="{% url 'schedule' %}">课程表</a></li>
+{% endblock %}
+{% block class %}
+    <h2 class="sub-header">课程列表</h2>
+    <a class="btn btn-primary btn-sm" href="{% url 'course_add' %}">新增</a>
+{% endblock %}
+{% block list %}
+    <thead>
+    <tr>
+        <th>序号</th>
+        <th>班级</th>
+        <th>课程名</th>
+        <th>上课老师</th>
+        <th>上课日期</th>
+        <th>上课时间</th>
+        <th>操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for i in course %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ i.Class.name }}</td>
+            <td>{{ i.teacher.subject }}</td>
+            <td>{{ i.teacher.name }}</td>
+            <td>周{{ i.week }}</td>
+            <td>第{{ i.section }}节</td>
+            <td>
+                <a class="btn btn-danger btn-sm" href="/course_del/?id={{ i.id }}">删除</a>
+                <a class="btn btn-primary btn-sm" href="/course_edit/?id={{ i.id }}">编辑</a>
+            </td>
+        </tr>
+    {% endfor %}
+
+    </tbody>
+{% endblock %}
